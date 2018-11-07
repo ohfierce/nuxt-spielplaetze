@@ -1,0 +1,42 @@
+$_width: 350px
+.playground 
+  position: absolute
+  left: -($_width)
+  top: 0
+  bottom: 0
+  height: 100vh
+  width: $_width
+  z-index: 3
+  background-color: white
+  transition: left .25s ease
+  &.visible 
+    left: 0
+  &__inner
+    position: relative
+  &__headline
+    background-color: darken(green,2%)
+    color: white
+    padding: 30px 10px
+    position: relative
+  &__body
+    padding: 30px 10px
+  &__close
+    position: absolute
+    top: 50%
+    transform: translateY(-50%)
+    right: 30px
+  &__options
+    .row
+      margin: 0
+  &__option
+    color: black
+    background-color: lightgrey
+    filter: grayscale(100%)
+    text-align: center
+    &.col-sm-3
+      padding: 0 0 
+    &--active
+      color: grey
+      filter: grayscale(0%)
+      background-color: lighten(green,65%)
+    

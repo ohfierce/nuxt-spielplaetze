@@ -1,0 +1,119 @@
+
+export default {
+  name: 'mapboxWrapper',
+  data () {
+    return {
+      markers: [],
+      map: null,
+      mapboxgl: null
+    }
+  },
+  mounted () {
+    this.fetchMarkers()
+    this.createMap()
+  },
+  methods: {
+    toggleState () {
+      console.log('1')
+      this.$store.commit('loading/toggle')
+    },
+    async fetchMarkers () {
+      this.markers = await this.$axios.$get('api/test')
+    },
+    createMap () {
+      this.mapboxgl = require('mapbox-gl/dist/mapbox-gl.js')
+      this.mapboxgl.accessToken = 'pk.eyJ1IjoicGlucGFydGRldiIsImEiOiJjajBqOXh0anAwMDFkMzNwbW5qMzVuZGo0In0.ltvQzboVtprxfeFAVOw1GA'
+      // init the map
+      this.map = new this.mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/pinpartdev/cj09ooc9g00a12sqpnkum9wcd',
+        center: [13.394389, 52.529889],
+        zoom: 15.5,
+        pitch: 45,
+        bearing: 0,
+        attributionControl: false
+      })
+      let _this = this
+      this.map.on('load', function () {
+        console.log('loaded')
+        setTimeout(() => {
+          _this.addBuildings()
+          _this.addMarkers()
+          _this.$store.commit('loading/toggle')
+        }, 250)
+      })
+    },
+    addBuildings () {
+      // Insert the layer beneath any symbol layer.
+      var layers = this.map.getStyle().layers
+
+      var labelLayerId
+      for (var i = 0; i < layers.length; i++) {
+        if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
+          labelLayerId = layers[i].id
+          break;
+        }
+      }
+
+      this.map.addLayer({
+        'id': '3d-buildings',
+        'source': 'composite',
+        'source-layer': 'building',
+        'filter': ['==', 'extrude', 'true'],
+        'type': 'fill-extrusion',
+        'minzoom': 13,
+        'paint': {
+          'fill-extrusion-color': '#aaa',
+
+          // use an 'interpolate' expression to add a smooth transition effect to the
+          // buildings as the user zooms in
+          'fill-extrusion-height': [
+            'interpolate', ['linear'], ['zoom'],
+            15, 0,
+            15.05, ['get', 'height']
+          ],
+          'fill-extrusion-base': [
+            'interpolate', ['linear'], ['zoom'],
+            15, 0,
+            15.05, ['get', 'min_height']
+          ],
+          'fill-extrusion-opacity': 0.6
+        }
+      }, labelLayerId)
+    },
+    addMarkers () {
+      console.log('2')
+      this.map.addSource('markers', { type: 'geojson', data: this.markers })
+      this.map.addLayer({
+        id: 'myPoint',
+        type: 'circle',
+        source: 'markers',
+        paint: {
+          'circle-radius': {
+            'base': 2,
+            'stops': [
+              [4, 2],
+              [6, 4],
+              [8, 6],
+              [22, 180]
+            ]
+          },
+          'circle-color': '#FF5500',
+          'circle-stroke-width': {
+            'base': 2,
+            'stops': [
+              [4, 2],
+              [6, 4],
+              [8, 6],
+              [22, 180]
+            ]
+          },
+          'circle-stroke-color': '#333333'
+        }
+      })
+      this.map.on('click', 'myPoint', function (e) {
+        console.log(e.features[0].properties)
+      })
+    }
+  }
+}
